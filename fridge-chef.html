@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>冰箱食谱助手</title>
+<style>
+:root {
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  --bg: #f6f4ee;
+  --surface: #ffffff;
+  --surface-2: #efece3;
+  --text: #25302a;
+  --muted: #6b766f;
+  --line: #e0dcd0;
+  --accent: #2f7d57;
+  --accent-text: #ffffff;
+  --warn-bg: #fdecd2;
+  --warn-text: #8a4f08;
+  --urgent-bg: #fbe0dc;
+  --urgent-text: #9a2f22;
+  --have-bg: #e1f0e7;
+  --have-text: #1f5a3d;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161a17; --surface: #1f2521; --surface-2: #2a312c; --text: #e8ece9; --muted: #98a39c;
+    --line: #333b35; --accent: #4fae80; --accent-text: #0e1a13;
+    --warn-bg: #4a3719; --warn-text: #f1c98a; --urgent-bg: #4d2723; --urgent-text: #f3b4ab;
+    --have-bg: #1f3b2c; --have-text: #a8dcc0; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161a17; --surface: #1f2521; --surface-2: #2a312c; --text: #e8ece9; --muted: #98a39c;
+  --line: #333b35; --accent: #4fae80; --accent-text: #0e1a13;
+  --warn-bg: #4a3719; --warn-text: #f1c98a; --urgent-bg: #4d2723; --urgent-text: #f3b4ab;
+  --have-bg: #1f3b2c; --have-text: #a8dcc0; color-scheme: dark;
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  line-height: 1.6; font-size: 16px;
+}
+.wrap { max-width: 760px; margin: 0 auto; padding: 20px 16px 60px; }
+h1 { font-size: 24px; margin: 4px 0 2px; }
+.sub { color: var(--muted); margin: 0 0 18px; font-size: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+.card h2 { font-size: 16px; margin: 0 0 10px; }
+.hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid transparent; font-size: 14px; color: var(--text);
+  cursor: pointer; font-family: inherit;
+}
+.chip.urgent { background: var(--urgent-bg); color: var(--urgent-text); }
+.chip.have { background: var(--have-bg); color: var(--have-text); cursor: default; }
+.chip.buy { background: var(--warn-bg); color: var(--warn-text); cursor: default; }
+.chip.suggest { background: transparent; border: 1px dashed var(--line); color: var(--muted); }
+.chip .x { opacity: .6; font-size: 15px; line-height: 1; padding: 0 2px; }
+.row { display: flex; gap: 8px; margin-top: 12px; }
+input[type=text], select, textarea {
+  flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--text); font-size: 16px; font-family: inherit;
+}
+textarea { width: 100%; resize: vertical; min-height: 64px; }
+button.btn {
+  padding: 10px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2);
+  color: var(--text); font-size: 15px; cursor: pointer; font-family: inherit;
+}
+button.btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+button.btn.small { padding: 5px 10px; font-size: 13px; border-radius: 8px; }
+button.btn:disabled { opacity: .5; cursor: default; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+label.f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+label.f select { font-size: 15px; }
+.status { padding: 14px; text-align: center; color: var(--muted); }
+.err { background: var(--urgent-bg); color: var(--urgent-text); padding: 12px 14px; border-radius: 10px; margin-bottom: 14px; font-size: 14px; }
+.meal-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.meal-tag { font-size: 12px; color: var(--accent); font-weight: 600; letter-spacing: .02em; }
+.meal-title { font-size: 18px; font-weight: 700; margin: 2px 0 4px; }
+.meal-time { font-size: 13px; color: var(--muted); }
+.why { font-size: 14px; color: var(--muted); margin: 4px 0 10px; }
+.sec { font-size: 13px; color: var(--muted); margin: 10px 0 6px; }
+ol.steps { margin: 4px 0 0; padding-left: 22px; }
+ol.steps li { margin-bottom: 6px; }
+.tip { margin-top: 10px; padding: 10px 12px; background: var(--surface-2); border-radius: 10px; font-size: 14px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.adjust { display: flex; gap: 8px; margin-top: 10px; }
+.busy-overlay { opacity: .55; pointer-events: none; }
+details > summary { cursor: pointer; font-size: 14px; color: var(--accent); margin-top: 8px; }
+.shop { margin-top: 6px; }
+.footer { color: var(--muted); font-size: 12px; text-align: center; margin-top: 24px; }
+@media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🥗 冰箱食谱助手</h1>
+  <p class="sub">输入冰箱里有的食材，自动生成抗炎减脂、荤素同炒的家常菜谱，还能随时调整。</p>
+
+  <div id="banner"></div>
+
+  <section class="card">
+    <h2>冰箱里有什么</h2>
+    <div class="chips" id="ingredients"></div>
+    <div class="row">
+      <input type="text" id="newIng" placeholder="输入食材，回车添加，多个可用逗号隔开" autocomplete="off">
+      <button class="btn" id="addBtn">添加</button>
+    </div>
+    <p class="hint">点一下食材标记为「快坏了，优先用」（变红），再点取消；点 × 删除。</p>
+    <div class="sec">常用补充（点一下加入）</div>
+    <div class="chips" id="suggestions"></div>
+  </section>
+
+  <section class="card">
+    <h2>你的偏好</h2>
+    <div class="grid">
+      <label class="f">要几天的菜单
+        <select id="days">
+          <option value="1">1 天（午饭+晚饭）</option>
+          <option value="2" selected>2 天</option>
+          <option value="3">3 天</option>
+        </select>
+      </label>
+      <label class="f">目标
+        <select id="goal">
+          <option value="抗炎减脂" selected>抗炎减脂</option>
+          <option value="抗炎，不刻意减脂">抗炎（不刻意减脂）</option>
+          <option value="增肌高蛋白，兼顾抗炎">增肌高蛋白</option>
+          <option value="清淡易消化，病后恢复">清淡易消化（病后恢复）</option>
+        </select>
+      </label>
+      <label class="f">同时包含早饭
+        <select id="breakfast">
+          <option value="no" selected>不用，我早饭固定</option>
+          <option value="yes">也安排早饭</option>
+        </select>
+      </label>
+      <label class="f">口味
+        <select id="taste">
+          <option value="家常清淡" selected>家常清淡</option>
+          <option value="川味微辣">川味微辣</option>
+          <option value="粤式清蒸鲜甜">粤式鲜甜</option>
+          <option value="江浙口味">江浙口味</option>
+        </select>
+      </label>
+    </div>
+    <div class="row" style="flex-direction:column;">
+      <textarea id="extra" placeholder="其他要求（可选），例如：不吃辣；晚饭要更饱腹；今天只想做20分钟以内的菜"></textarea>
+    </div>
+    <p class="hint">默认规则：午饭吃米饭或杂粮饭，晚饭不吃米饭；每餐一个荤素同炒的菜（晚饭加一碗汤）；调料按家里常备（油盐酱油醋姜蒜、五谷杂粮）。</p>
+    <div class="row">
+      <button class="btn primary" id="genBtn" style="flex:1;">生成食谱</button>
+    </div>
+  </section>
+
+  <div id="error"></div>
+  <div id="result"></div>
+  <div id="shopping"></div>
+
+  <div class="footer">食谱由 Claude 生成，仅供日常参考；如有疾病或特殊饮食要求，请遵医嘱。</div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var DEFAULT_ING = ["牛奶","吐司","豆腐","鸡蛋","莲藕","荸荠","包菜","豌豆粒","baby corn","生菜","苦苣","洋葱","大葱","蓝莓","芒果","柿子","猴头菇","羊肚菌（干）","竹荪（干）","银耳（干）","鸡翅","烤鸭","鱼片","牛肉","虾仁","带壳虾"];
+  var DEFAULT_URGENT = ["生菜","苦苣","带壳虾","鱼片","豌豆粒","蓝莓"];
+  var SUGGEST = ["菠菜","西兰花","番茄","香菇","木耳","三文鱼","小白菜","西葫芦","芹菜","鸡胸肉","毛豆","胡萝卜"];
+
+  var state = { ings: [], plan: null, busy: false };
+  var sample = null;
+  var lastPrompt = "";
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  // ---------- storage (best effort) ----------
+  function save() {
+    try { localStorage.setItem("fridge-chef-v1", JSON.stringify({ ings: state.ings })); } catch (e) {}
+  }
+  function load() {
+    try {
+      var raw = localStorage.getItem("fridge-chef-v1");
+      if (raw) {
+        var d = JSON.parse(raw);
+        if (d && Array.isArray(d.ings) && d.ings.length) { state.ings = d.ings; return; }
+      }
+    } catch (e) {}
+    state.ings = DEFAULT_ING.map(function (n) { return { name: n, urgent: DEFAULT_URGENT.indexOf(n) >= 0 }; });
+  }
+
+  // ---------- ingredients UI ----------
+  function has(name) { return state.ings.some(function (i) { return i.name === name; }); }
+  function addIngredients(text) {
+    text.split(/[,，、;；\n]+/).forEach(function (s) {
+      s = s.trim();
+      if (s && !has(s)) state.ings.push({ name: s, urgent: false });
+    });
+    save(); renderIngredients();
+  }
+  function renderIngredients() {
+    var box = $("ingredients");
+    box.textContent = "";
+    if (!state.ings.length) box.appendChild(el("span", "hint", "还没有食材，先添加几样吧。"));
+    state.ings.forEach(function (it, idx) {
+      var c = el("span", "chip" + (it.urgent ? " urgent" : ""));
+      c.appendChild(el("span", null, (it.urgent ? "⏰ " : "") + it.name));
+      var x = el("span", "x", "×");
+      x.addEventListener("click", function (ev) {
+        ev.stopPropagation(); state.ings.splice(idx, 1); save(); renderIngredients();
+      });
+      c.appendChild(x);
+      c.addEventListener("click", function () { it.urgent = !it.urgent; save(); renderIngredients(); });
+      box.appendChild(c);
+    });
+    var sg = $("suggestions");
+    sg.textContent = "";
+    SUGGEST.forEach(function (n) {
+      if (has(n)) return;
+      var c = el("button", "chip suggest", "+ " + n);
+      c.type = "button";
+      c.addEventListener("click", function () { addIngredients(n); });
+      sg.appendChild(c);
+    });
+  }
+
+  // ---------- prompt building ----------
+  function prefs() {
+    return {
+      days: parseInt($("days").value, 10),
+      goal: $("goal").value,
+      breakfast: $("breakfast").value === "yes",
+      taste: $("taste").value,
+      extra: $("extra").value.trim()
+    };
+  }
+  function fridgeText() {
+    var normal = state.ings.filter(function (i) { return !i.urgent; }).map(function (i) { return i.name; });
+    var urgent = state.ings.filter(function (i) { return i.urgent; }).map(function (i) { return i.name; });
+    return "【快坏了，务必优先用掉】" + (urgent.join("、") || "无") + "\n【其他食材】" + (normal.join("、") || "无");
+  }
+  var RULES =
+    "你是一位懂营养的中餐家庭厨师。请只根据用户冰箱里的食材设计菜谱，规则：\n" +
+    "1. 用户是中国胃，家常做法。午饭=米饭或杂粮饭 + 一个荤素同炒的菜（蔬菜与肉约2:1到3:1，肉切薄切丝）；晚饭=不吃米饭，一个荤素炒菜或蒸/凉拌 + 一碗汤；早饭（若需要）=牛奶煮燕麦加蛋、配水果。\n" +
+    "2. 目标导向：抗炎（多用深海鱼/虾、豆制品、深色蔬菜、菌菇、橄榄油，少糖少盐少油炸），同时控制热量。\n" +
+    "3. 标记为「快坏了」的食材必须优先安排进最近的餐里；烤鸭、鸡翅等高油盐食材要少量使用或靠后。\n" +
+    "4. 默认家里常备：油、盐、生抽、醋、姜、蒜、淀粉、胡椒、各种五谷杂粮。除此之外冰箱里没有的，放进 buy 数组（尽量少，最多2样）。\n" +
+    "5. 步骤要具体可操作（火候、顺序、时间），每道菜4到7步，每步一句话。\n" +
+    "6. 干货（羊肚菌、竹荪、银耳等）要写明泡发方法。\n";
+  var FORMAT =
+    "只输出 JSON，不要任何其他文字、不要 Markdown 代码块。格式：\n" +
+    '{"meals":[{"day":1,"meal":"午饭","title":"菜名","why":"一句话说明为什么这样搭配（抗炎/减脂/用掉哪些快坏的食材）","time_min":20,"uses":["用到的冰箱食材"],"buy":["需要补买的，没有就空数组"],"steps":["步骤1","步骤2"],"tip":"一句小提示，可为空字符串"}],"summary":"一句话总结这份计划"}';
+
+  function buildPlanPrompt(extraFeedback) {
+    var p = prefs();
+    var s = RULES + "\n用户目标：" + p.goal + "；口味：" + p.taste + "。\n" +
+      "请安排 " + p.days + " 天的" + (p.breakfast ? "早饭、午饭和晚饭" : "午饭和晚饭") + "，meal 字段取值为 早饭/午饭/晚饭，day 从 1 开始。\n" +
+      "冰箱情况：\n" + fridgeText() + "\n";
+    if (p.extra) s += "用户额外要求：" + p.extra + "\n";
+    if (extraFeedback) s += "\n用户对上一版的调整意见：" + extraFeedback + "\n上一版计划（供参考，按意见修改）：\n" + JSON.stringify(state.plan.meals.map(brief)) + "\n";
+    return s + "\n" + FORMAT;
+  }
+  function brief(m) { return { day: m.day, meal: m.meal, title: m.title, uses: m.uses }; }
+
+  function buildMealPrompt(idx, instruction) {
+    var p = prefs();
+    var m = state.plan.meals[idx];
+    var others = state.plan.meals.filter(function (_, i) { return i !== idx; }).map(function (x) { return x.day + "天" + x.meal + "：" + x.title + "（用到：" + (x.uses || []).join("、") + "）"; });
+    return RULES + "\n用户目标：" + p.goal + "；口味：" + p.taste + "。\n冰箱情况：\n" + fridgeText() + "\n" +
+      "计划中其他餐已经安排了：\n" + (others.join("\n") || "无") + "\n（请避免与它们重复，也别把同一种食材全用光。）\n\n" +
+      "现在只需要重新设计第 " + m.day + " 天的" + m.meal + "，原来的菜是「" + m.title + "」。\n" +
+      "用户的调整要求：" + instruction + "\n" +
+      "只输出 JSON，不要任何其他文字，格式：\n" +
+      '{"day":' + m.day + ',"meal":"' + m.meal + '","title":"菜名","why":"一句话","time_min":20,"uses":[],"buy":[],"steps":["..."],"tip":""}';
+  }
+
+  // ---------- Claude call ----------
+  function errText(e) {
+    var c = e && e.code;
+    if (c === "not_granted") return "需要先允许此页面使用 Claude 才能生成食谱。刷新页面后重试，并在弹窗中选择允许。";
+    if (c === "rate_limited") return "请求太频繁了，稍等几秒再试。";
+    return "生成失败了，请稍后重试。" + (e && e.message ? "（" + e.message + "）" : "");
+  }
+  function setBusy(b, msg) {
+    state.busy = b;
+    $("genBtn").disabled = b;
+    $("genBtn").textContent = b ? "生成中…" : (state.plan ? "重新生成整份食谱" : "生成食谱");
+    if (b && msg) { var r = $("result"); if (!state.plan) { r.textContent = ""; r.appendChild(el("div", "status", msg)); } }
+  }
+  function showError(t) {
+    var box = $("error"); box.textContent = "";
+    if (t) box.appendChild(el("div", "err", t));
+  }
+  async function ask(prompt) {
+    lastPrompt = prompt;
+    if (!sample) throw { code: "unavailable", message: "当前环境无法调用 Claude" };
+    return await sample.json(prompt, { modelTier: "default", cache: false });
+  }
+  function sanitizeMeal(m) {
+    function arr(a) { return Array.isArray(a) ? a.map(String) : []; }
+    return {
+      day: Number(m.day) || 1, meal: String(m.meal || "午饭"), title: String(m.title || "未命名"),
+      why: String(m.why || ""), time_min: Number(m.time_min) || 0,
+      uses: arr(m.uses), buy: arr(m.buy), steps: arr(m.steps), tip: String(m.tip || "")
+    };
+  }
+
+  async function generate(feedback) {
+    if (!state.ings.length) { showError("请先添加至少一样食材。"); return; }
+    showError("");
+    setBusy(true, "Claude 正在根据你的食材设计菜谱，大约需要半分钟…");
+    if (state.plan) $("result").classList.add("busy-overlay");
+    try {
+      var data = await ask(buildPlanPrompt(feedback));
+      if (!data || !Array.isArray(data.meals) || !data.meals.length) throw { code: "bad", message: "返回内容格式不对" };
+      state.plan = { meals: data.meals.map(sanitizeMeal), summary: String(data.summary || "") };
+      render();
+    } catch (e) {
+      showError(errText(e));
+      if (!state.plan) $("result").textContent = "";
+      if (e && e.code === "unavailable") showFallback();
+    } finally {
+      $("result").classList.remove("busy-overlay");
+      setBusy(false);
+    }
+  }
+
+  async function adjustMeal(idx, instruction) {
+    if (!instruction) return;
+    showError("");
+    state.plan.meals[idx]._busy = true; render();
+    try {
+      var data = await ask(buildMealPrompt(idx, instruction));
+      if (!data || !Array.isArray(data.steps)) throw { code: "bad", message: "返回内容格式不对" };
+      state.plan.meals[idx] = sanitizeMeal(data);
+    } catch (e) {
+      delete state.plan.meals[idx]._busy;
+      showError(errText(e));
+    }
+    render();
+  }
+
+  function showFallback() {
+    var box = $("error");
+    box.appendChild(el("div", "hint", "你也可以把下面的提示词复制到 Claude 对话里使用："));
+    var ta = el("textarea"); ta.readOnly = true; ta.value = buildPlanPrompt(""); ta.style.minHeight = "140px";
+    box.appendChild(ta);
+  }
+
+  // ---------- rendering ----------
+  function render() {
+    var r = $("result"); r.textContent = "";
+    if (!state.plan) { $("shopping").textContent = ""; return; }
+    $("genBtn").textContent = "重新生成整份食谱";
+
+    if (state.plan.summary) {
+      var sc = el("section", "card");
+      sc.appendChild(el("div", null, state.plan.summary));
+      var fb = el("div", "adjust");
+      var fi = el("input"); fi.type = "text"; fi.placeholder = "对整份计划提意见，例如：想多吃点鱼 / 大葱用完了";
+      var fbtn = el("button", "btn", "按意见重做"); fbtn.type = "button";
+      fbtn.addEventListener("click", function () { if (fi.value.trim()) generate(fi.value.trim()); });
+      fi.addEventListener("keydown", function (e) { if (e.key === "Enter" && fi.value.trim()) generate(fi.value.trim()); });
+      fb.appendChild(fi); fb.appendChild(fbtn); sc.appendChild(fb);
+      r.appendChild(sc);
+    }
+
+    state.plan.meals.forEach(function (m, idx) {
+      var card = el("section", "card" + (m._busy ? " busy-overlay" : ""));
+      var head = el("div", "meal-head");
+      head.appendChild(el("span", "meal-tag", "第" + m.day + "天 · " + m.meal));
+      if (m.time_min) head.appendChild(el("span", "meal-time", "约 " + m.time_min + " 分钟"));
+      card.appendChild(head);
+      card.appendChild(el("div", "meal-title", m._busy ? "重新设计中…" : m.title));
+      if (m.why) card.appendChild(el("div", "why", m.why));
+
+      if (m.uses.length) {
+        card.appendChild(el("div", "sec", "用到冰箱里的"));
+        var u = el("div", "chips");
+        m.uses.forEach(function (x) { u.appendChild(el("span", "chip have", x)); });
+        card.appendChild(u);
+      }
+      if (m.buy.length) {
+        card.appendChild(el("div", "sec", "需要补买"));
+        var b = el("div", "chips");
+        m.buy.forEach(function (x) { b.appendChild(el("span", "chip buy", x)); });
+        card.appendChild(b);
+      }
+
+      var det = el("details"); det.open = idx === 0;
+      det.appendChild(el("summary", null, "做法步骤"));
+      var ol = el("ol", "steps");
+      m.steps.forEach(function (s) { ol.appendChild(el("li", null, s)); });
+      det.appendChild(ol);
+      card.appendChild(det);
+
+      if (m.tip) card.appendChild(el("div", "tip", "💡 " + m.tip));
+
+      var acts = el("div", "actions");
+      [["换一道", "换一道完全不同的菜，食材可以重新搭配"], ["更清淡", "更清淡少油少盐"], ["更快手", "更快手，15分钟内做完"], ["更饱腹", "更饱腹，蛋白质更足"]].forEach(function (a) {
+        var bt = el("button", "btn small", a[0]); bt.type = "button";
+        bt.addEventListener("click", function () { adjustMeal(idx, a[1]); });
+        acts.appendChild(bt);
+      });
+      card.appendChild(acts);
+
+      var adj = el("div", "adjust");
+      var ai = el("input"); ai.type = "text"; ai.placeholder = "自定义调整，例如：没有大葱了 / 不想吃牛肉";
+      var ab = el("button", "btn small", "调整"); ab.type = "button";
+      ab.addEventListener("click", function () { adjustMeal(idx, ai.value.trim()); });
+      ai.addEventListener("keydown", function (e) { if (e.key === "Enter") adjustMeal(idx, ai.value.trim()); });
+      adj.appendChild(ai); adj.appendChild(ab);
+      card.appendChild(adj);
+
+      r.appendChild(card);
+    });
+
+    renderShopping();
+  }
+
+  function renderShopping() {
+    var box = $("shopping"); box.textContent = "";
+    var seen = {}; var list = [];
+    state.plan.meals.forEach(function (m) { m.buy.forEach(function (x) { if (!seen[x]) { seen[x] = 1; list.push(x); } }); });
+    if (!list.length) return;
+    var c = el("section", "card");
+    c.appendChild(el("h2", null, "🛒 需要补买（汇总）"));
+    var ch = el("div", "chips shop");
+    list.forEach(function (x) { ch.appendChild(el("span", "chip buy", x)); });
+    c.appendChild(ch);
+    box.appendChild(c);
+  }
+
+  // ---------- init ----------
+  $("addBtn").addEventListener("click", function () {
+    var v = $("newIng").value; if (v.trim()) { addIngredients(v); $("newIng").value = ""; }
+  });
+  $("newIng").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { var v = this.value; if (v.trim()) { addIngredients(v); this.value = ""; } }
+  });
+  $("genBtn").addEventListener("click", function () { if (!state.busy) generate(""); });
+
+  load();
+  renderIngredients();
+
+  if (window.claude && typeof window.claude.use === "function") {
+    window.claude.use("sample").then(function (s) {
+      sample = s;
+      if (!s) $("banner").appendChild(el("div", "err", "当前环境没有开启 Claude 生成功能，只能整理食材。请在 claude.ai 里打开此页面。"));
+    }).catch(function () { sample = null; });
+  } else {
+    $("banner").appendChild(el("div", "err", "请在 claude.ai 里打开此页面，才能使用 Claude 生成食谱。"));
+  }
+})();
+</script>
+</body>
+</html>
