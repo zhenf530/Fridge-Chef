@@ -12,7 +12,7 @@
 ## 🌱 这是什么 | What is this?
 
 **中文**
-一个小小的、软软的食谱助手 🍃
+一个简单好用的食谱助手 🍃
 把冰箱里的食材告诉它，它就会帮你排出**抗炎、减脂、好做**的中式家常菜单，还会写清楚每一步怎么做。
 快坏的食材会被优先安排，不浪费一点点 🥬
 
@@ -29,7 +29,7 @@ Ingredients that are about to go bad get used first, so nothing goes to waste �
 |---|---|---|
 | 🧺 | 添加、删除食材，浏览器会记住你的冰箱 | Add or remove ingredients; your fridge is remembered in the browser |
 | ⏰ | 点一下标记「快坏了」，生成时优先用掉 | Tap to mark "expiring soon" so they get used first |
-| 🍚 | 午饭有米饭，晚饭不吃米饭 | Rice at lunch, no rice at dinner |
+| 🍚 | （自定义）午饭有米饭，晚饭不吃米饭 | Rice at lunch, no rice at dinner |
 | 🥢 | 每餐一个荤素同炒，晚饭再配一碗汤 | One stir-fry of meat plus veggies per meal, plus a soup at dinner |
 | 🎯 | 目标可选：抗炎减脂、高蛋白、病后清淡 | Goals: anti-inflammatory fat loss, high protein, or light recovery meals |
 | 🌶️ | 口味可选：家常、川味、粤式、江浙 | Tastes: home-style, Sichuan, Cantonese, Jiangzhe |
